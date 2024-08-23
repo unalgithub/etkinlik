@@ -4,16 +4,17 @@ import 'dart:convert';
 
 class EventDetailPage extends StatefulWidget {
   final String eventName;
+  final String uniqueId; // Benzersiz ID
   final List<String> participants;
 
   const EventDetailPage({
     super.key,
     required this.eventName,
+    required this.uniqueId,
     required this.participants,
   });
 
   @override
-  // ignore: library_private_types_in_public_api
   _EventDetailPageState createState() => _EventDetailPageState();
 }
 
@@ -41,20 +42,20 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
   void _saveData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('${widget.eventName}_prices', jsonEncode(_prices));
-    await prefs.setDouble('${widget.eventName}_totalPrice', _totalPrice);
-    // ignore: use_build_context_synchronously
+    await prefs.setString('${widget.eventName}_${widget.uniqueId}_prices', jsonEncode(_prices));
+    await prefs.setDouble('${widget.eventName}_${widget.uniqueId}_totalPrice', _totalPrice);
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Veriler kaydedildi!')),
     );
-    // ignore: use_build_context_synchronously
+
     Navigator.pop(context);  // Ana sayfaya dön
   }
 
   void _loadData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? pricesString = prefs.getString('${widget.eventName}_prices');
-    double? totalPrice = prefs.getDouble('${widget.eventName}_totalPrice');
+    String? pricesString = prefs.getString('${widget.eventName}_${widget.uniqueId}_prices');
+    double? totalPrice = prefs.getDouble('${widget.eventName}_${widget.uniqueId}_totalPrice');
 
     if (pricesString != null) {
       List<dynamic> pricesList = jsonDecode(pricesString);

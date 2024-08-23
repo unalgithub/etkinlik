@@ -109,7 +109,7 @@ class _EventPageState extends State<EventPage> {
                       MaterialPageRoute(
                         builder: (context) => EventDetailPage(
                           eventName: event['name'],
-                          participants: people,
+                          participants: people, uniqueId: '',
                         ),
                       ),
                     );
