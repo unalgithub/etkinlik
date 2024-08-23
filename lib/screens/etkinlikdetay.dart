@@ -15,6 +15,7 @@ class EventDetailPage extends StatefulWidget {
   });
 
   @override
+  // ignore: library_private_types_in_public_api
   _EventDetailPageState createState() => _EventDetailPageState();
 }
 
@@ -45,10 +46,12 @@ class _EventDetailPageState extends State<EventDetailPage> {
     await prefs.setString('${widget.eventName}_${widget.uniqueId}_prices', jsonEncode(_prices));
     await prefs.setDouble('${widget.eventName}_${widget.uniqueId}_totalPrice', _totalPrice);
 
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Veriler kaydedildi!')),
     );
 
+    // ignore: use_build_context_synchronously
     Navigator.pop(context);  // Ana sayfaya dön
   }
 
