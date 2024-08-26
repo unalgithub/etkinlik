@@ -29,7 +29,7 @@ class _LoginContentState extends State<LoginContent>
   final _tEmail = TextEditingController();
   final _tPassword = TextEditingController();
 
-  Widget inputField(TextEditingController controller, String hint, IconData iconData) {
+  Widget inputField(TextEditingController controller, String hint, IconData iconData, {bool obscureText = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 8),
       child: SizedBox(
@@ -42,6 +42,7 @@ class _LoginContentState extends State<LoginContent>
           child: TextField(
             controller: controller,
             textAlignVertical: TextAlignVertical.bottom,
+            obscureText: obscureText,
             decoration: InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
@@ -63,9 +64,9 @@ class _LoginContentState extends State<LoginContent>
       padding: const EdgeInsets.symmetric(horizontal: 135, vertical: 16),
       child: ElevatedButton(
         onPressed: () {
-         if (onTap != null) {
-           onTap();
-         }
+          if (onTap != null) {
+            onTap();
+          }
         },
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14), backgroundColor: kSecondaryColor,
@@ -116,8 +117,6 @@ class _LoginContentState extends State<LoginContent>
     );
   }
 
-  
-
   Widget forgotPassword() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 110),
@@ -140,15 +139,14 @@ class _LoginContentState extends State<LoginContent>
     createAccountContent = [
       inputField(_tName, 'İsim', Ionicons.person_outline),
       inputField(_tEmail, 'Email', Ionicons.mail_outline),
-      inputField(_tPassword, 'Şifre', Ionicons.lock_closed_outline),
+      inputField(_tPassword, 'Şifre', Ionicons.lock_closed_outline, obscureText: true),
       actionButton('Kayıt Ol', onTap: () => locator.get<AuthService>().signUp(context, name: _tName.text, email: _tEmail.text, password: _tPassword.text),),
       orDivider(),
-     
     ];
 
     loginContent = [
       inputField(_tEmail, 'Email', Ionicons.mail_outline),
-      inputField(_tPassword, 'Şifre', Ionicons.lock_closed_outline),
+      inputField(_tPassword, 'Şifre', Ionicons.lock_closed_outline, obscureText: true),
       actionButton('Giriş Yap', onTap: () => locator.get<AuthService>().signIn(context, email: _tEmail.text, password: _tPassword.text),),
       forgotPassword(),
     ];
@@ -179,7 +177,6 @@ class _LoginContentState extends State<LoginContent>
   @override
   void dispose() {
     ChangeScreenAnimation.dispose();
-
     super.dispose();
   }
 
