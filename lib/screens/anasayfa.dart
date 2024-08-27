@@ -85,11 +85,12 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
                     child: IconButton(
                       icon: Icon(
                         Provider.of<ThemeProvider>(context).isDarkMode
-                            ? Icons.dark_mode
-                            : Icons.light_mode,
+                            ? Icons.light_mode
+                            : Icons.dark_mode,
                       ),
                       onPressed: () {
-                        Provider.of<ThemeProvider>(context, listen: false).toogleTheme();
+                        Provider.of<ThemeProvider>(context, listen: false)
+                            .toogleTheme();
                       },
                     ),
                   ),
@@ -114,7 +115,8 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
             tooltip: 'Etkinlik ekle',
             child: const Icon(Icons.playlist_add_outlined),
           ),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerDocked,
           bottomNavigationBar: AnimatedBottomNavigationBar.builder(
             itemCount: iconList.length,
             tabBuilder: (int index, bool isActive) {
@@ -132,7 +134,11 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: AutoSizeText(
-                      index == 3 ? "Ayarlar" : "Page $index",
+                      index == 0
+                          ? "Etkinlikler"
+                          : index == 3
+                              ? "Ayarlar"
+                              : "", // index 1 ve 2 durumları için boş metin
                       maxLines: 1,
                       style: TextStyle(color: color),
                     ),
@@ -162,7 +168,7 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
         return _buildEventList(eventProvider);
       case 1:
         return const Center(child: Text("Add Event"));
-    
+
       case 3:
         return const Center(child: Text("Ayarlar")); // Page 3 için özel içerik
       default:
