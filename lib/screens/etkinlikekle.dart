@@ -1,174 +1,109 @@
-import 'package:flutter/material.dart'; // Flutter'ın material tasarım bileşenlerini kullanmak için
+import 'package:deneme/providers/event_add_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-class AddEventPage extends StatefulWidget {
-  final void Function(Map<String, dynamic>) onEventAdded; // Etkinlik eklendiğinde çağrılacak fonksiyon
 
-  const AddEventPage({super.key, required this.onEventAdded}); // Constructor, onEventAdded fonksiyonunu alır
+class AddEventPage extends StatelessWidget {
+  final void Function(Map<String, dynamic>) onEventAdded;
 
-  @override
-  // ignore: library_private_types_in_public_api
-  _AddEventPageState createState() => _AddEventPageState(); // State oluşturulur
-}
-
-class _AddEventPageState extends State<AddEventPage> {
-  final TextEditingController _nameController = TextEditingController(); // Etkinlik ismi için controller
-  final TextEditingController _locationController = TextEditingController(); // Yer için controller
-  final TextEditingController _dateController = TextEditingController(); // Tarih için controller
-  final TextEditingController _timeController = TextEditingController(); // Saat için controller
-  List<String> people = []; // Kişileri saklamak için liste
-  final TextEditingController _personController = TextEditingController(); // Kişi eklemek için controller
-
-  void _addPerson() {
-    // Kişi ekleme işlevi
-    String person = _personController.text; // TextField'dan kişiyi al
-    if (person.isNotEmpty) { // Kişi boş değilse
-      setState(() {
-        people.add(person); // Kişiyi listeye ekle
-        _personController.clear(); // TextField'i temizle
-      });
-    }
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    // Tarih seçimi işlevi
-    final DateTime? picked = await showDatePicker(
-      context: context, // Dialog'un gösterileceği context
-      initialDate: DateTime.now(), // Varsayılan olarak bugünkü tarih
-      firstDate: DateTime.now(), // Seçilebilecek en erken tarih
-      lastDate: DateTime(2100), // Seçilebilecek en geç tarih
-    );
-    if (picked != null) {
-      // Eğer bir tarih seçildiyse
-      setState(() {
-        _dateController.text = "${picked.toLocal()}".split(' ')[0]; // Seçilen tarihi TextField'a yaz
-      });
-    }
-  }
-
-  Future<void> _selectTime(BuildContext context) async {
-  // Saat seçimi işlevi
-  final TimeOfDay? picked = await showTimePicker(
-    context: context, // Dialog'un gösterileceği context
-    initialTime: TimeOfDay.now(), // Varsayılan olarak mevcut saat
-    builder: (BuildContext context, Widget? child) {
-      return MediaQuery(
-        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true), // 24 saat formatını etkinleştir
-        child: child!,
-      );
-    },
-  );
-    if (picked != null) {
-  // Eğer bir saat seçildiyse
-  setState(() {
-    // Seçilen saati 24 saat formatında TextField'a yaz
-    final hour = picked.hour.toString().padLeft(2, '0'); // Saati iki basamaklı olacak şekilde formatla
-    final minute = picked.minute.toString().padLeft(2, '0'); // Dakikayı iki basamaklı olacak şekilde formatla
-    _timeController.text = '$hour:$minute'; // Saati ve dakikayı birleştir
-  });
-}
-  }
-
-  void _submitEvent() {
-    // Etkinlik gönderme işlevi
-    final String name = _nameController.text; // Etkinlik ismini al
-    final String location = _locationController.text; // Yeri al
-    final String date = _dateController.text; // Tarihi al
-    final String time = _timeController.text; // Saati al
-
-    if (name.isNotEmpty && location.isNotEmpty && date.isNotEmpty && time.isNotEmpty) {
-      // Tüm alanlar doluysa
-      widget.onEventAdded({
-        'name': name,
-        'location': location,
-        'date': date,
-        'time': time,
-        'people': people, // Kişileri etkinlik bilgileriyle birlikte gönder
-      });
-      Navigator.of(context).pop(); // Sayfayı kapat
-    }
-  }
-
-  @override
-  void dispose() {
-    // Kullanıcı arayüzü bileşenleri kapatılırken çağrılır
-    _nameController.dispose(); // _nameController'ı kapat
-    _locationController.dispose(); // _locationController'ı kapat
-    _dateController.dispose(); // _dateController'ı kapat
-    _timeController.dispose(); // _timeController'ı kapat
-    _personController.dispose(); // _personController'ı kapat
-    super.dispose(); // Üst sınıfın dispose metodunu çağır
-  }
+  const AddEventPage({super.key, required this.onEventAdded});
 
   @override
   Widget build(BuildContext context) {
-    // Uygulamanın görünümünü oluşturan build metodu
+    final provider = Provider.of<EventFormProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back), // Geri butonu ikonu
+          icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.of(context).pop(); // Geri butonuna tıklanınca sayfayı kapat
+            Navigator.of(context).pop();
           },
         ),
-        title: const Text('Etkinlik Ekle'), // Sayfanın başlığı
+        title: const Text('Etkinlik Ekle'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.check), // Onay butonu ikonu
-            onPressed: _submitEvent, // Onay butonuna tıklanınca etkinliği gönder
+            icon: const Icon(Icons.check),
+            onPressed: () {
+              if (provider.name.isNotEmpty && provider.location.isNotEmpty &&
+                  provider.date.isNotEmpty && provider.time.isNotEmpty) {
+                onEventAdded({
+                  'name': provider.name,
+                  'location': provider.location,
+                  'date': provider.date,
+                  'time': provider.time,
+                  'people': provider.people,
+                });
+                Navigator.of(context).pop();
+              }
+            },
           ),
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0), // Sayfa kenar boşlukları
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
-              controller: _nameController, // Etkinlik ismi için controller
-              decoration: const InputDecoration(labelText: 'Etkinlik ismi'), // TextField'in etiketi
+              onChanged: (value) => provider.setName(value),
+              decoration: const InputDecoration(labelText: 'Etkinlik ismi'),
+              controller: TextEditingController(text: provider.name),
             ),
             TextField(
-              controller: _locationController, // Yeri için controller
-              decoration: const InputDecoration(labelText: 'Yeri'), // TextField'in etiketi
+              onChanged: (value) => provider.setLocation(value),
+              decoration: const InputDecoration(labelText: 'Yeri'),
+              controller: TextEditingController(text: provider.location),
             ),
             TextField(
-              controller: _dateController, // Tarih için controller
+              onChanged: (value) => provider.setDate(value),
               decoration: InputDecoration(
-                labelText: 'Tarihi', // TextField'in etiketi
+                labelText: 'Tarihi',
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.calendar_today), // Takvim ikonu
-                  onPressed: () => _selectDate(context), // Tarih seçimi için buton
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () => _selectDate(context),
                 ),
               ),
-              readOnly: true, // Sadece tıklama ile seçim yapılabilir
+              readOnly: true,
+              controller: TextEditingController(text: provider.date),
             ),
             TextField(
-              controller: _timeController, // Saat için controller
+              onChanged: (value) => provider.setTime(value),
               decoration: InputDecoration(
-                labelText: 'Saati', // TextField'in etiketi
+                labelText: 'Saati',
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.access_time), // Saat ikonu
-                  onPressed: () => _selectTime(context), // Saat seçimi için buton
+                  icon: const Icon(Icons.access_time),
+                  onPressed: () => _selectTime(context),
                 ),
               ),
-              readOnly: true, // Sadece tıklama ile seçim yapılabilir
+              readOnly: true,
+              controller: TextEditingController(text: provider.time),
             ),
             TextField(
-              controller: _personController, // Kişi eklemek için controller
+              onChanged: (value) => provider.addPerson(value),
               decoration: InputDecoration(
-                labelText: 'Kişilere ekle', // TextField'in etiketi
+                labelText: 'Kişilere ekle',
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.add_circle_outline), // Ekleme butonu ikonu
-                  onPressed: _addPerson, // Ekleme butonuna tıklanınca kişiyi ekle
+                  icon: const Icon(Icons.add_circle_outline),
+                  onPressed: () {
+                    if (provider.people.isNotEmpty) {
+                      provider.addPerson(provider.people.last);
+                    }
+                  },
                 ),
               ),
+              controller: TextEditingController(text: provider.people.isEmpty ? '' : provider.people.last),
             ),
-            const SizedBox(height: 20), // Görsel boşluk
+            const SizedBox(height: 20),
             Expanded(
               child: ListView.builder(
-                itemCount: people.length, // Kişi sayısına göre liste öğesi sayısı
+                itemCount: provider.people.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(people[index]), // Kişi ismini göster
+                    title: Text(provider.people[index]),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => provider.removePerson(index),
+                    ),
                   );
                 },
               ),
@@ -177,5 +112,37 @@ class _AddEventPageState extends State<AddEventPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final provider = Provider.of<EventFormProvider>(context, listen: false);
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      provider.setDate("${picked.toLocal()}".split(' ')[0]);
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    final provider = Provider.of<EventFormProvider>(context, listen: false);
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      final hour = picked.hour.toString().padLeft(2, '0');
+      final minute = picked.minute.toString().padLeft(2, '0');
+      provider.setTime('$hour:$minute');
+    }
   }
 }

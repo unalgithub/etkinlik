@@ -1,4 +1,5 @@
 import 'package:deneme/locator.dart';
+import 'package:deneme/providers/event_add_provider.dart';
 import 'package:deneme/providers/event_detail_provider.dart';
 import 'package:deneme/providers/event_provider.dart';
 import 'package:deneme/providers/theme_provider.dart';
@@ -22,9 +23,11 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => EventFormProvider()),
         ChangeNotifierProvider(create: (_) => EventProvider()),
         ChangeNotifierProvider(create: (_) => locator.get<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => EventDetailProvider()),
+        
       ],
       child: const MyApp(),
     ),
