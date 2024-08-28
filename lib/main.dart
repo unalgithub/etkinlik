@@ -1,4 +1,5 @@
 import 'package:deneme/locator.dart';
+import 'package:deneme/providers/event_detail_provider.dart';
 import 'package:deneme/providers/event_provider.dart';
 import 'package:deneme/providers/theme_provider.dart';
 import 'package:deneme/screens/login_screen/services/provider/auth_provider.dart';
@@ -23,6 +24,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => EventProvider()),
         ChangeNotifierProvider(create: (_) => locator.get<AuthProvider>()),
+        ChangeNotifierProvider(create: (_) => EventDetailProvider()),
       ],
       child: const MyApp(),
     ),
