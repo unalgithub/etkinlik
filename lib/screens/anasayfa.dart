@@ -195,9 +195,9 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
       case 0:
         return _buildEventList(eventProvider);
       case 1:
-        return const Center(child: Text('"Sayfa 1"'));
+        return Center(child: Text("Sayfa 1".tr()));
       case 3:
-        return const Center(child: Text("Ayarlar"));
+        return Center(child: Text("Ayarlar".tr()));
       default:
         return Center(child: Text("page".tr(args: [_bottomNavIndex.toString()])));
     }
