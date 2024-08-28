@@ -1,13 +1,14 @@
 import 'package:deneme/locator.dart';
-
 import 'package:deneme/providers/event_detail_provider.dart';
 import 'package:deneme/providers/event_provider.dart';
 import 'package:deneme/providers/theme_provider.dart';
 import 'package:deneme/screens/login_screen/services/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'screens/login_screen/login_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:easy_localization/easy_localization.dart';
+
+import 'screens/login_screen/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,17 +20,21 @@ void main() async {
       projectId: "fir-325e5",
     ),
   );
+  await EasyLocalization.ensureInitialized(); // Localization'ı başlat
   setupLocator();
   runApp(
-    MultiProvider(
-      providers: [
-        
-        ChangeNotifierProvider(create: (_) => EventProvider()),
-        ChangeNotifierProvider(create: (_) => locator.get<AuthProvider>()),
-        ChangeNotifierProvider(create: (_) => EventDetailProvider()),
-        
-      ],
-      child: const MyApp(),
+    EasyLocalization(
+      supportedLocales: const [Locale('en', 'US'), Locale('tr', 'TR')],
+      path: 'assets/translations', // Çeviri dosyalarının konumu
+      fallbackLocale: const Locale('en', 'US'), // fallbackLocale parametresi burada olmalı
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => EventProvider()),
+          ChangeNotifierProvider(create: (_) => locator.get<AuthProvider>()),
+          ChangeNotifierProvider(create: (_) => EventDetailProvider()),
+        ],
+        child: const MyApp(),
+      ),
     ),
   );
 }
@@ -39,18 +44,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-  
     return ChangeNotifierProvider(
-      create: (context)=> ThemeProvider(),
-      builder:(context, child){
+      create: (context) => ThemeProvider(),
+      builder: (context, child) {
         final provider = Provider.of<ThemeProvider>(context);
-      return MaterialApp(
-        theme:provider.theme,
-         home: const LoginScreen(),
-      );
-        
-      }
-     );
+        return MaterialApp(
+          theme: provider.theme,
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: const LoginScreen(), // Ana sayfa burası
+        );
+      },
+    );
   }
 }
+

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -6,6 +7,7 @@ import 'package:deneme/providers/event_provider.dart';
 import 'package:deneme/providers/theme_provider.dart';
 import 'package:deneme/screens/etkinlikdetay.dart';
 import 'package:deneme/screens/etkinlikekle.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class EventPage extends StatefulWidget {
   const EventPage({super.key});
@@ -77,21 +79,31 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
           body: Stack(
             children: [
               _getBody(eventProvider),
-              if (_bottomNavIndex == 3) // Sadece Page 3'te butonu göster
+              if (_bottomNavIndex == 3)
                 Positioned(
                   top: 16,
                   right: 15,
                   child: SafeArea(
-                    child: IconButton(
-                      icon: Icon(
-                        Provider.of<ThemeProvider>(context).isDarkMode
-                            ? Icons.light_mode
-                            : Icons.dark_mode,
-                      ),
-                      onPressed: () {
-                        Provider.of<ThemeProvider>(context, listen: false)
-                            .toogleTheme();
-                      },
+                    child: Column(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Provider.of<ThemeProvider>(context).isDarkMode
+                                ? Icons.light_mode
+                                : Icons.dark_mode,
+                          ),
+                          onPressed: () {
+                            Provider.of<ThemeProvider>(context, listen: false)
+                                .toogleTheme();
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.language),
+                          onPressed: () {
+                            _changeLanguage(context);
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -112,7 +124,7 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
                 ),
               );
             },
-            tooltip: 'Etkinlik ekle',
+            tooltip: 'add_event'.tr(),
             child: const Icon(Icons.playlist_add_outlined),
           ),
           floatingActionButtonLocation:
@@ -135,10 +147,10 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: AutoSizeText(
                       index == 0
-                          ? "Etkinlikler"
+                          ? "events".tr()
                           : index == 3
-                              ? "Ayarlar"
-                              : "", // index 1 ve 2 durumları için boş metin
+                              ? "settings".tr()
+                              : "page".tr(args: [index.toString()]),
                       maxLines: 1,
                       style: TextStyle(color: color),
                     ),
@@ -162,17 +174,32 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
     );
   }
 
+  void _changeLanguage(BuildContext context) {
+    final currentLocale = context.locale;
+    if (kDebugMode) {
+      print("Current Locale: $currentLocale");
+    }
+
+    final newLocale = currentLocale == const Locale('tr', 'TR')
+        ? const Locale('en', 'US')
+        : const Locale('tr', 'TR');
+    
+    context.setLocale(newLocale);
+    if (kDebugMode) {
+      print("New Locale: $newLocale");
+    }
+  }
+
   Widget _getBody(EventProvider eventProvider) {
     switch (_bottomNavIndex) {
       case 0:
         return _buildEventList(eventProvider);
       case 1:
-        return const Center(child: Text("Add Event"));
-
+        return const Center(child: Text('"Sayfa 1"'));
       case 3:
-        return const Center(child: Text("Ayarlar")); // Page 3 için özel içerik
+        return const Center(child: Text("Ayarlar"));
       default:
-        return Center(child: Text("Page $_bottomNavIndex"));
+        return Center(child: Text("page".tr(args: [_bottomNavIndex.toString()])));
     }
   }
 
@@ -206,11 +233,11 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Yer: ${event['location']}'),
-                        Text('Tarih: ${event['date']}'),
-                        Text('Saat: ${event['time']}'),
+                        Text('${"location".tr()}: ${event['location']}'),
+                        Text('${"date".tr()}: ${event['date']}'),
+                        Text('${"time".tr()}: ${event['time']}'),
                         const SizedBox(height: 10),
-                        const Text('Katılımcılar:'),
+                        Text('participants'.tr()),
                         ...people.map((person) => Text(person)),
                       ],
                     ),
@@ -229,20 +256,20 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Silmek istediğinize emin misiniz?"),
+          title: Text("delete_confirmation".tr()),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text("İptal"),
+              child: Text("cancel".tr()),
             ),
             TextButton(
               onPressed: () {
                 eventProvider.removeEvent(index);
                 Navigator.of(context).pop();
               },
-              child: const Text("Sil"),
+              child: Text("delete".tr()),
             ),
           ],
         );

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-
+import 'package:easy_localization/easy_localization.dart';
 
 class EventDetailPage extends StatefulWidget {
   final String eventName;
@@ -28,7 +28,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
   @override
   void initState() {
     super.initState();
-    _loadData();  // Load data when the app starts
+    _loadData(); // Load data when the app starts
   }
 
   void _loadData() async {
@@ -57,17 +57,17 @@ class _EventDetailPageState extends State<EventDetailPage> {
   void _saveData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     // ignore: use_build_context_synchronously
-   final eventProvider = Provider.of<EventDetailProvider>(context, listen: false);
+    final eventProvider = Provider.of<EventDetailProvider>(context, listen: false);
     await prefs.setString('${widget.eventName}_${widget.uniqueId}_prices', jsonEncode(eventProvider.prices));
     await prefs.setDouble('${widget.eventName}_${widget.uniqueId}_totalPrice', eventProvider.totalPrice);
 
     // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Kaydedildi')),
+      SnackBar(content: Text('saved'.tr())),
     );
 
     // ignore: use_build_context_synchronously
-    Navigator.pop(context);  // Go back to the main page
+    Navigator.pop(context); // Go back to the main page
   }
 
   @override
@@ -86,24 +86,24 @@ class _EventDetailPageState extends State<EventDetailPage> {
                 TextField(
                   controller: _priceController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Fiyat (TL)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'price'.tr(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: _addPrice,
-                  child: const Text('Ekle'),
+                  child: Text('add'.tr()),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Toplam Fiyat: ${eventProvider.totalPrice} TL',
+                  '${'total_price'.tr()}: ${eventProvider.totalPrice} TL',
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Kişi Başı Fiyat: ${(eventProvider.totalPrice / widget.participants.length).toStringAsFixed(2)} TL',
+                  '${'price_per_person'.tr()}: ${(eventProvider.totalPrice / widget.participants.length).toStringAsFixed(2)} TL',
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
@@ -124,7 +124,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _saveData,
-                  child: const Text('Kaydet'),
+                  child: Text('save'.tr()),
                 ),
               ],
             );
