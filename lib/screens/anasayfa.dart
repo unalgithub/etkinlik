@@ -89,8 +89,8 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
                         IconButton(
                           icon: Icon(
                             Provider.of<ThemeProvider>(context).isDarkMode
-                                ? Icons.light_mode
-                                : Icons.dark_mode,
+                                ? Icons.dark_mode
+                                : Icons.light_mode,
                           ),
                           onPressed: () {
                             Provider.of<ThemeProvider>(context, listen: false)
@@ -212,7 +212,8 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
             itemBuilder: (context, index) {
               final event = eventProvider.events[index];
               final people = event['people'] as List<String>? ?? [];
-              return GestureDetector(
+              return InkWell(
+               
                 onLongPress: () {
                   _showDeleteDialog(index, eventProvider);
                 },
@@ -228,6 +229,7 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
                   );
                 },
                 child: Card(
+                  color: Colors.transparent,
                   child: ListTile(
                     title: Text(event['name'] ?? ''),
                     subtitle: Column(

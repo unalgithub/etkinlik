@@ -20,13 +20,13 @@ void main() async {
       projectId: "fir-325e5",
     ),
   );
-  await EasyLocalization.ensureInitialized(); // Localization'ı başlat
+  await EasyLocalization.ensureInitialized(); 
   setupLocator();
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en', 'US'), Locale('tr', 'TR')],
-      path: 'assets/translations', // Çeviri dosyalarının konumu
-      fallbackLocale: const Locale('en', 'US'), // fallbackLocale parametresi burada olmalı
+      path: 'assets/translations', 
+      fallbackLocale: const Locale('en', 'US'),
       child: MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => EventProvider()),
@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
-          home: const LoginScreen(), // Ana sayfa burası
+          home: const LoginScreen(),
         );
       },
     );
