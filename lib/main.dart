@@ -1,14 +1,16 @@
 import 'package:deneme/locator.dart';
 import 'package:deneme/providers/event_detail_provider.dart';
+import 'package:deneme/providers/event_form_provider.dart';
 import 'package:deneme/providers/event_provider.dart';
 import 'package:deneme/providers/theme_provider.dart';
+import 'package:deneme/screens/anasayfa.dart';
 import 'package:deneme/screens/login_screen/services/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:easy_localization/easy_localization.dart';
 
-import 'screens/login_screen/login_screen.dart';
+// import 'screens/login_screen/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +31,7 @@ void main() async {
       fallbackLocale: const Locale('en', 'US'),
       child: MultiProvider(
         providers: [
+          ChangeNotifierProvider(create: (_) => EventFormProvider()),
           ChangeNotifierProvider(create: (_) => EventProvider()),
           ChangeNotifierProvider(create: (_) => locator.get<AuthProvider>()),
           ChangeNotifierProvider(create: (_) => EventDetailProvider()),
@@ -53,7 +56,7 @@ class MyApp extends StatelessWidget {
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
-          home: const LoginScreen(),
+          home: const EventPage(), // LoginScreen İle değiştir
         );
       },
     );
