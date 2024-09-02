@@ -61,10 +61,11 @@ class MyApp extends StatelessWidget {
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
-          home: const EventPage(), // LoginScreen İle değiştir
+          home: EventPage() // LoginScreen İle değiştir
         );
       },
     );
   }
 }
+
 
