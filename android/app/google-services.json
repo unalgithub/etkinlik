@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "195505533348",
-    "project_id": "fir-325e5",
-    "storage_bucket": "fir-325e5.appspot.com"
+    "project_number": "735214350632",
+    "project_id": "etkinlik-firebasee",
+    "storage_bucket": "etkinlik-firebasee.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:195505533348:android:294abea531b69c127b1131",
+        "mobilesdk_app_id": "1:735214350632:android:c65983a715a78fedb7201d",
         "android_client_info": {
-          "package_name": "com.example.firebase"
+          "package_name": "com.example.deneme"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCX4i67YtOC85Ed3qZCRV6pCElfFCR9Reg"
+          "current_key": "AIzaSyBP-j6J9n7152qL_kME--9cyg4iFepvT8U"
         }
       ],
       "services": {

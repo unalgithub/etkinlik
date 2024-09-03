@@ -5,24 +5,20 @@ import 'package:deneme/providers/event_form_provider.dart';
 import 'package:deneme/providers/event_provider.dart';
 import 'package:deneme/providers/theme_provider.dart';
 import 'package:deneme/providers/top_text_provider.dart';
-import 'package:deneme/screens/anasayfa.dart';
+import 'package:deneme/screens/login_screen/login_screen.dart';
 import 'package:deneme/screens/login_screen/services/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:deneme/firebase_options.dart';
 
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: "AIzaSyCX4i67YtOC85Ed3qZCRV6pCElfFCR9Reg",
-      appId: "1:195505533348:android:294abea531b69c127b1131",
-      messagingSenderId: "195505533348",
-      projectId: "fir-325e5",
-    ),
+    options: DefaultFirebaseOptions.currentPlatform,
   );
   await EasyLocalization.ensureInitialized(); 
   setupLocator();
@@ -61,7 +57,7 @@ class MyApp extends StatelessWidget {
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
-          home: EventPage() // LoginScreen İle değiştir
+          home: LoginScreen() // LoginScreen İle değiştir
         );
       },
     );
