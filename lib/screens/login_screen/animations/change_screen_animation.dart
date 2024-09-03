@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../components/login_content.dart';
 
 class ChangeScreenAnimation {

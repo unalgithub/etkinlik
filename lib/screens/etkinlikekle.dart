@@ -1,8 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:deneme/providers/event_form_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:provider/provider.dart';
-
 
 class AddEventPage extends StatelessWidget {
   final void Function(Map<String, dynamic>) onEventAdded;
@@ -44,25 +44,43 @@ class AddEventPage extends StatelessWidget {
   }
 
   void _submitEvent(BuildContext context) {
-  final formProvider = Provider.of<EventFormProvider>(context, listen: false);
+    final formProvider = Provider.of<EventFormProvider>(context, listen: false);
 
-  final String name = formProvider.nameController.text;
-  final String location = formProvider.locationController.text;
-  final String date = formProvider.dateController.text;
-  final String time = formProvider.timeController.text;
+    final String name = formProvider.nameController.text;
+    final String location = formProvider.locationController.text;
+    final String date = formProvider.dateController.text;
+    final String time = formProvider.timeController.text;
+    final List<String> people = List<String>.from(formProvider.people);
 
-  if (name.isNotEmpty && location.isNotEmpty && date.isNotEmpty && time.isNotEmpty) {
-    onEventAdded({
-      'name': name,
-      'location': location,
-      'date': date,
-      'time': time,
-      'people': List<String>.from(formProvider.people), // Ensure this is a fresh list copy
-    });
-    formProvider.clearFields();
-    Navigator.of(context).pop();
+    if (name.isNotEmpty &&
+        location.isNotEmpty &&
+        date.isNotEmpty &&
+        time.isNotEmpty) {
+      // Firestore'a veri ekleme
+      FirebaseFirestore.instance.collection('events').add({
+        'name': name,
+        'location': location,
+        'date': date,
+        'time': time,
+        'people': people,
+      }).then((value) {
+        onEventAdded({
+          'name': name,
+          'location': location,
+          'date': date,
+          'time': time,
+          'people': people,
+        });
+        formProvider.clearFields();
+        Navigator.of(context).pop();
+      }).catchError((error) {
+        // Hata durumunda kullanıcıya bilgi verme
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Etkinlik eklenemedi: $error')),
+        );
+      });
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -135,11 +153,16 @@ class AddEventPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     Expanded(
-                      child: ListView.builder(
-                        itemCount: formProvider.people.length,
-                        itemBuilder: (context, index) {
-                          return ListTile(
-                            title: Text(formProvider.people[index]),
+                      child: Consumer<EventFormProvider>(
+                        builder: (context, formProvider, child) {
+                          return ListView.builder(
+                            itemCount: formProvider.people.length,
+                            itemBuilder: (context, index) {
+                              final person = formProvider.people[index];
+                              return ListTile(
+                                title: Text(person),
+                              );
+                            },
                           );
                         },
                       ),

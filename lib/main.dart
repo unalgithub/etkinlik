@@ -5,7 +5,7 @@ import 'package:deneme/providers/event_form_provider.dart';
 import 'package:deneme/providers/event_provider.dart';
 import 'package:deneme/providers/theme_provider.dart';
 import 'package:deneme/providers/top_text_provider.dart';
-import 'package:deneme/screens/login_screen/login_screen.dart';
+import 'package:deneme/screens/anasayfa.dart';
 import 'package:deneme/screens/login_screen/services/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
-          home: LoginScreen() // LoginScreen İle değiştir
+          home: EventPage() // LoginScreen İle değiştir
         );
       },
     );

@@ -16,14 +16,25 @@ class EventProvider extends ChangeNotifier {
     _events = prefs.getKeys().where((key) => key.endsWith('_details')).map((key) {
       String eventName = key.split('_')[0];
       String? eventJson = prefs.getString(key);
-      Map<String, dynamic> event = jsonDecode(eventJson ?? '{}');
-      return {
-        'name': eventName,
-        'location': event['location'] ?? 'Bilinmiyor',
-        'date': event['date'] ?? 'Bilinmiyor',
-        'time': event['time'] ?? 'Bilinmiyor',
-        'people': List<String>.from(event['people'] ?? []),
-      };
+      try {
+        Map<String, dynamic> event = jsonDecode(eventJson ?? '{}');
+        return {
+          'name': eventName,
+          'location': event['location'] ?? 'Bilinmiyor',
+          'date': event['date'] ?? 'Bilinmiyor',
+          'time': event['time'] ?? 'Bilinmiyor',
+          'people': List<String>.from(event['people'] ?? []),
+        };
+      } catch (e) {
+        // Hata durumunda varsayılan değer döndür
+        return {
+          'name': eventName,
+          'location': 'Bilinmiyor',
+          'date': 'Bilinmiyor',
+          'time': 'Bilinmiyor',
+          'people': [],
+        };
+      }
     }).toList();
     notifyListeners();
   }
@@ -44,11 +55,11 @@ class EventProvider extends ChangeNotifier {
   Future<void> _saveEvent(Map<String, dynamic> event) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String eventName = event['name'];
-    prefs.setString('${eventName}_details', jsonEncode(event));
+    await prefs.setString('${eventName}_details', jsonEncode(event));
   }
 
   Future<void> _deleteEvent(String eventName) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.remove('${eventName}_details');
+    await prefs.remove('${eventName}_details');
   }
 }
