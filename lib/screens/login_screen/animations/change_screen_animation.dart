@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
-import '../components/login_content.dart';
+  import 'package:flutter/material.dart';
+  import '../components/login_content.dart';
 
-class ChangeScreenAnimation {
-  static late final AnimationController topTextController;
-  static late final Animation<Offset> topTextAnimation;
+  class ChangeScreenAnimation {
+  static AnimationController? topTextController;
+  static late Animation<Offset> topTextAnimation;
 
-  static late final AnimationController bottomTextController;
-  static late final Animation<Offset> bottomTextAnimation;
+  static AnimationController? bottomTextController;
+  static late Animation<Offset> bottomTextAnimation;
 
   static final List<AnimationController> createAccountControllers = [];
   static final List<Animation<Offset>> createAccountAnimations = [];
@@ -35,27 +35,33 @@ class ChangeScreenAnimation {
     required int createAccountItems,
     required int loginItems,
   }) {
-    topTextController = AnimationController(
-      vsync: vsync,
-      duration: const Duration(milliseconds: 200),
-    );
+    // Eğer topTextController daha önce başlatılmamışsa initialize edin
+    if (topTextController == null) {
+      topTextController = AnimationController(
+        vsync: vsync,
+        duration: const Duration(milliseconds: 200),
+      );
 
-    topTextAnimation = _createAnimation(
-      begin: Offset.zero,
-      end: const Offset(-1.2, 0),
-      parent: topTextController,
-    );
+      topTextAnimation = _createAnimation(
+        begin: Offset.zero,
+        end: const Offset(-1.2, 0),
+        parent: topTextController!,
+      );
+    }
 
-    bottomTextController = AnimationController(
-      vsync: vsync,
-      duration: const Duration(milliseconds: 200),
-    );
+    // Aynı kontrolü bottomTextController için de yapıyoruz
+    if (bottomTextController == null) {
+      bottomTextController = AnimationController(
+        vsync: vsync,
+        duration: const Duration(milliseconds: 200),
+      );
 
-    bottomTextAnimation = _createAnimation(
-      begin: Offset.zero,
-      end: const Offset(0, 1.7),
-      parent: bottomTextController,
-    );
+      bottomTextAnimation = _createAnimation(
+        begin: Offset.zero,
+        end: const Offset(0, 1.7),
+        parent: bottomTextController!,
+      );
+    }
 
     for (var i = 0; i < createAccountItems; i++) {
       createAccountControllers.add(
@@ -99,15 +105,15 @@ class ChangeScreenAnimation {
       ...createAccountControllers,
       ...loginControllers,
     ]) {
-      controller.dispose();
+      controller?.dispose();  // Kontroller null olabilir, bu yüzden '?' ekliyoruz
     }
   }
 
   static Future<void> forward() async {
     isPlaying = true;
 
-    topTextController.forward();
-    await bottomTextController.forward();
+    topTextController?.forward();
+    await bottomTextController?.forward();
 
     for (final controller in [
       ...createAccountControllers,
@@ -117,8 +123,8 @@ class ChangeScreenAnimation {
       await Future.delayed(const Duration(milliseconds: 100));
     }
 
-    bottomTextController.reverse();
-    await topTextController.reverse();
+    bottomTextController?.reverse();
+    await topTextController?.reverse();
 
     isPlaying = false;
   }
@@ -126,8 +132,8 @@ class ChangeScreenAnimation {
   static Future<void> reverse() async {
     isPlaying = true;
 
-    topTextController.forward();
-    await bottomTextController.forward();
+    topTextController?.forward();
+    await bottomTextController?.forward();
 
     for (final controller in [
       ...loginControllers.reversed,
@@ -137,8 +143,8 @@ class ChangeScreenAnimation {
       await Future.delayed(const Duration(milliseconds: 100));
     }
 
-    bottomTextController.reverse();
-    await topTextController.reverse();
+    bottomTextController?.reverse();
+    await topTextController?.reverse();
 
     isPlaying = false;
   }

@@ -1,3 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:deneme/screens/login_screen/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
@@ -37,6 +40,8 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+   
 
     _fabAnimationController = AnimationController(
       duration: const Duration(milliseconds: 500),
@@ -103,6 +108,13 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
                             _changeLanguage(context);
                           },
                         ),
+                        IconButton(
+                      icon: const Icon(Icons.exit_to_app),
+                      onPressed: () {
+                        _signOutAndRedirect(context); // Çıkış fonksiyonunu çağırıyoruz
+                      },
+                      tooltip: 'logout'.tr(),
+                    ),
                       ],
                     ),
                   ),
@@ -173,6 +185,7 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
       },
     );
   }
+  
 
   void _changeLanguage(BuildContext context) {
     final currentLocale = context.locale;
@@ -189,69 +202,129 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
       print("New Locale: $newLocale");
     }
   }
-
-  Widget _getBody(EventProvider eventProvider) {
-    switch (_bottomNavIndex) {
-      case 0:
-        return _buildEventList(eventProvider);
-      case 1:
-        return Center(child: Text("Sayfa 1".tr()));
-      case 3:
-        return Center(child: Text("Ayarlar".tr()));
-      default:
-        return Center(child: Text("page".tr(args: [_bottomNavIndex.toString()])));
-    }
-  }
-
-  Widget _buildEventList(EventProvider eventProvider) {
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            itemCount: eventProvider.events.length,
-            itemBuilder: (context, index) {
-              final event = eventProvider.events[index];
-              final people = event['people'] as List<String>? ?? [];
-              return InkWell(
-               
-                onLongPress: () {
-                  _showDeleteDialog(index, eventProvider);
-                },
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => EventDetailPage(
-                        eventName: event['name'],
-                        participants: people,
-                        uniqueId: '',
-                      ),
-                    ),
-                  );
-                },
-                child: Card(
-                  color: Colors.transparent,
-                  child: ListTile(
-                    title: Text(event['name'] ?? ''),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${"location".tr()}: ${event['location']}'),
-                        Text('${"date".tr()}: ${event['date']}'),
-                        Text('${"time".tr()}: ${event['time']}'),
-                        const SizedBox(height: 10),
-                        Text('participants'.tr()),
-                        ...people.map((person) => Text(person)),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+    Future<void> _signOutAndRedirect(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => const LoginScreen(), // Giriş ekranına yönlendirme
+      ),
     );
   }
+
+Widget _getBody(EventProvider eventProvider) {
+  switch (_bottomNavIndex) {
+    case 0:
+      return _buildEventList(eventProvider);
+    case 1:
+      return Center(child: Text("Sayfa 1".tr()));
+    case 3:
+      return _buildSettingsPage();
+    default:
+      return Center(child: Text("page".tr(args: [_bottomNavIndex.toString()])));
+  }
+}
+Widget _buildSettingsPage() {
+  User? currentUser = FirebaseAuth.instance.currentUser;
+
+  if (currentUser == null) {
+    return Center(child: Text("Kullanıcı oturum açmamış."));
+  }
+
+  // Kullanıcının Firestore'daki belgelerini almak
+  return FutureBuilder<DocumentSnapshot>(
+    future: FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Center(child: CircularProgressIndicator());
+      }
+
+      if (snapshot.hasError) {
+        print("Hata: ${snapshot.error}"); // Hata mesajını konsola yazdır
+        return Center(child: Text("Veri alınırken hata oluştu."));
+      }
+
+      if (!snapshot.hasData || !snapshot.data!.exists) {
+        print("Kullanıcı ID: ${currentUser.uid}"); // Kullanıcı ID'sini konsola yazdır
+        return Center(child: Text("Kullanıcı bilgileri bulunamadı."));
+      }
+
+      // Veritabanından kullanıcı adını al
+      String userName = snapshot.data!['name'] ?? "Kullanıcı Adı"; // Varsayılan metin
+      String userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : '?'; // Boşsa '?' göster
+
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: Colors.purple,
+              child: Text(
+                userInitial,
+                style: TextStyle(fontSize: 24, color: Colors.white),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              userName,
+              style: TextStyle(fontSize: 20),
+            ),
+            // Diğer ayarlar, butonlar vb. burada
+          ],
+        ),
+      );
+    },
+  );
+}
+
+Widget _buildEventList(EventProvider eventProvider) {
+  return Column(
+    children: [
+      Expanded(
+        child: ListView.builder(
+          itemCount: eventProvider.events.length,
+          itemBuilder: (context, index) {
+            final event = eventProvider.events[index];
+            final people = (event['people'] as List<dynamic>).map((e) => e.toString()).toList();
+            return InkWell(
+              onLongPress: () {
+                _showDeleteDialog(index, eventProvider);
+              },
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => EventDetailPage(
+                      eventName: event['name'],
+                      participants: people,
+                      uniqueId: '',
+                    ),
+                  ),
+                );
+              },
+              child: Card(
+                color: Colors.transparent,
+                child: ListTile(
+                  title: Text(event['name'] ?? ''),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${"location".tr()}: ${event['location']}'),
+                      Text('${"date".tr()}: ${event['date']}'),
+                      Text('${"time".tr()}: ${event['time']}'),
+                      const SizedBox(height: 10),
+                      Text('participants'.tr()),
+                      ...people.map((person) => Text(person)),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    ],
+  );
+}
 
   void _showDeleteDialog(int index, EventProvider eventProvider) {
     showDialog(

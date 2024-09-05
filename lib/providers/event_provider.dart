@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class EventProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _events = [];
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   List<Map<String, dynamic>> get events => _events;
 
@@ -12,54 +14,44 @@ class EventProvider extends ChangeNotifier {
   }
 
   Future<void> _loadAllEvents() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    _events = prefs.getKeys().where((key) => key.endsWith('_details')).map((key) {
-      String eventName = key.split('_')[0];
-      String? eventJson = prefs.getString(key);
-      try {
-        Map<String, dynamic> event = jsonDecode(eventJson ?? '{}');
+    User? user = _auth.currentUser;
+
+    if (user != null) {
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('events')
+          .where('uid', isEqualTo: user.uid)
+          .get();
+
+      _events = querySnapshot.docs.map((doc) {
         return {
-          'name': eventName,
-          'location': event['location'] ?? 'Bilinmiyor',
-          'date': event['date'] ?? 'Bilinmiyor',
-          'time': event['time'] ?? 'Bilinmiyor',
-          'people': List<String>.from(event['people'] ?? []),
+          'id': doc.id, // documentId ekleyin
+          'name': doc['name'],
+          'location': doc['location'],
+          'date': doc['date'],
+          'time': doc['time'],
+          'people': List<String>.from(doc['people']),
         };
-      } catch (e) {
-        // Hata durumunda varsayılan değer döndür
-        return {
-          'name': eventName,
-          'location': 'Bilinmiyor',
-          'date': 'Bilinmiyor',
-          'time': 'Bilinmiyor',
-          'people': [],
-        };
-      }
-    }).toList();
-    notifyListeners();
+      }).toList();
+      notifyListeners();
+    }
   }
 
   Future<void> addEvent(Map<String, dynamic> event) async {
-    _events.add(event);
-    notifyListeners();
-    await _saveEvent(event);
+    User? user = _auth.currentUser;
+
+    if (user != null) {
+      event['uid'] = user.uid;
+      DocumentReference docRef = await _firestore.collection('events').add(event);
+      event['id'] = docRef.id; // documentId'yi etkinliğe ekleyin
+      _events.add(event);
+      notifyListeners();
+    }
   }
 
   Future<void> removeEvent(int index) async {
-    String eventName = _events[index]['name'];
+    String eventId = _events[index]['id'];
     _events.removeAt(index);
     notifyListeners();
-    await _deleteEvent(eventName);
-  }
-
-  Future<void> _saveEvent(Map<String, dynamic> event) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String eventName = event['name'];
-    await prefs.setString('${eventName}_details', jsonEncode(event));
-  }
-
-  Future<void> _deleteEvent(String eventName) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('${eventName}_details');
+    await _firestore.collection('events').doc(eventId).delete();
   }
 }

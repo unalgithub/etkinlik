@@ -4,10 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:provider/provider.dart';
 
-class AddEventPage extends StatelessWidget {
+import 'package:firebase_auth/firebase_auth.dart';
+
+final FirebaseAuth _auth = FirebaseAuth.instance;
+final User? user = _auth.currentUser;
+final String uid = user!.uid; // Kullanıcının benzersiz ID'si
+
+class AddEventPage extends StatefulWidget {
   final void Function(Map<String, dynamic>) onEventAdded;
 
   const AddEventPage({super.key, required this.onEventAdded});
+
+  @override
+  _AddEventPageState createState() => _AddEventPageState();
+}
+
+class _AddEventPageState extends State<AddEventPage> {
+  bool _isSubmitting = false; // Yeni bir boolean flag
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -17,7 +30,6 @@ class AddEventPage extends StatelessWidget {
       lastDate: DateTime(2100),
     );
     if (picked != null) {
-      // ignore: use_build_context_synchronously
       Provider.of<EventFormProvider>(context, listen: false)
           .setDate("${picked.toLocal()}".split(' ')[0]);
     }
@@ -37,13 +49,17 @@ class AddEventPage extends StatelessWidget {
     if (picked != null) {
       final hour = picked.hour.toString().padLeft(2, '0');
       final minute = picked.minute.toString().padLeft(2, '0');
-      // ignore: use_build_context_synchronously
       Provider.of<EventFormProvider>(context, listen: false)
           .setTime('$hour:$minute');
     }
   }
 
-  void _submitEvent(BuildContext context) {
+  void _submitEvent(BuildContext context) async {
+    if (_isSubmitting) return; // Zaten bir gönderim işlemi devam ediyorsa tekrar tetiklenmesin
+    setState(() {
+      _isSubmitting = true; // İşlem başladı
+    });
+
     final formProvider = Provider.of<EventFormProvider>(context, listen: false);
 
     final String name = formProvider.nameController.text;
@@ -52,19 +68,24 @@ class AddEventPage extends StatelessWidget {
     final String time = formProvider.timeController.text;
     final List<String> people = List<String>.from(formProvider.people);
 
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    final User? user = _auth.currentUser;
+    final String uid = user!.uid;
+
     if (name.isNotEmpty &&
         location.isNotEmpty &&
         date.isNotEmpty &&
         time.isNotEmpty) {
       // Firestore'a veri ekleme
       FirebaseFirestore.instance.collection('events').add({
+        'uid': uid,  // Kullanıcının ID'si ekleniyor
         'name': name,
         'location': location,
         'date': date,
         'time': time,
         'people': people,
       }).then((value) {
-        onEventAdded({
+        widget.onEventAdded({
           'name': name,
           'location': location,
           'date': date,
@@ -74,106 +95,100 @@ class AddEventPage extends StatelessWidget {
         formProvider.clearFields();
         Navigator.of(context).pop();
       }).catchError((error) {
-        // Hata durumunda kullanıcıya bilgi verme
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Etkinlik eklenemedi: $error')),
         );
+      }).whenComplete(() {
+        setState(() {
+          _isSubmitting = false; // İşlem bittiğinde tekrar form gönderimini aç
+        });
       });
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => EventFormProvider(),
-      builder: (context, child) {
-        return Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              tooltip: 'back'.tr(),
-            ),
-            title: Text('add_event'.tr()),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.check),
-                onPressed: () => _submitEvent(context),
-                tooltip: 'confirm'.tr(),
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+        tooltip: 'back'.tr(),
+      ),
+      title: Text('add_event'.tr()),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.check),
+          onPressed: () => _submitEvent(context),
+          tooltip: 'confirm'.tr(),
+        ),
+      ],
+    ),
+    body: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Consumer<EventFormProvider>(
+        builder: (context, formProvider, child) {
+          return Column(
+            children: [
+              TextField(
+                controller: formProvider.nameController,
+                decoration: InputDecoration(labelText: 'event_name'.tr()),
+              ),
+              TextField(
+                controller: formProvider.locationController,
+                decoration: InputDecoration(labelText: 'location'.tr()),
+              ),
+              TextField(
+                controller: formProvider.dateController,
+                decoration: InputDecoration(
+                  labelText: 'date'.tr(),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.calendar_today),
+                    onPressed: () => _selectDate(context),
+                  ),
+                ),
+                readOnly: true,
+              ),
+              TextField(
+                controller: formProvider.timeController,
+                decoration: InputDecoration(
+                  labelText: 'time'.tr(),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.access_time),
+                    onPressed: () => _selectTime(context),
+                  ),
+                ),
+                readOnly: true,
+              ),
+              TextField(
+                controller: formProvider.personController,
+                decoration: InputDecoration(
+                  labelText: 'add_people'.tr(),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.add_circle_outline),
+                    onPressed: formProvider.addPerson,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: formProvider.people.length,
+                  itemBuilder: (context, index) {
+                    final person = formProvider.people[index];
+                    return ListTile(
+                      title: Text(person),
+                    );
+                  },
+                ),
               ),
             ],
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Consumer<EventFormProvider>(
-              builder: (context, formProvider, child) {
-                return Column(
-                  children: [
-                    TextField(
-                      controller: formProvider.nameController,
-                      decoration: InputDecoration(labelText: 'event_name'.tr()),
-                    ),
-                    TextField(
-                      controller: formProvider.locationController,
-                      decoration: InputDecoration(labelText: 'location'.tr()),
-                    ),
-                    TextField(
-                      controller: formProvider.dateController,
-                      decoration: InputDecoration(
-                        labelText: 'date'.tr(),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.calendar_today),
-                          onPressed: () => _selectDate(context),
-                        ),
-                      ),
-                      readOnly: true,
-                    ),
-                    TextField(
-                      controller: formProvider.timeController,
-                      decoration: InputDecoration(
-                        labelText: 'time'.tr(),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.access_time),
-                          onPressed: () => _selectTime(context),
-                        ),
-                      ),
-                      readOnly: true,
-                    ),
-                    TextField(
-                      controller: formProvider.personController,
-                      decoration: InputDecoration(
-                        labelText: 'add_people'.tr(),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.add_circle_outline),
-                          onPressed: formProvider.addPerson,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Expanded(
-                      child: Consumer<EventFormProvider>(
-                        builder: (context, formProvider, child) {
-                          return ListView.builder(
-                            itemCount: formProvider.people.length,
-                            itemBuilder: (context, index) {
-                              final person = formProvider.people[index];
-                              return ListTile(
-                                title: Text(person),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        );
-      },
-    );
-  }
+          );
+        },
+      ),
+    ),
+  );
+}
 }

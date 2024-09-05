@@ -7,6 +7,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 class AuthService {
   final userCollection = FirebaseFirestore.instance.collection("users");
   final firebaseAuth = FirebaseAuth.instance;
+  
+   
 
   Future<void> signUp(BuildContext context, {required String name, required String email, required String password}) async {
     final navigator = Navigator.of(context);
