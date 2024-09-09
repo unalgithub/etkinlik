@@ -27,6 +27,10 @@ class _EventDetailPageState extends State<EventDetailPage> {
   final Map<String, double> _participantPrices = {}; // Fiyatları tutmak için map
   double _currentPrice = 0.0; // Girilen şu anki fiyat
   double _totalPrice = 0.0; // Toplam fiyat
+  String _selectedExpenseType = ''; // Seçilen harcama tipi
+
+  // Harcama tipleri listesi
+  final List<String> _expenseTypes = ['food'.tr(), 'transport'.tr(), 'accomodation'.tr(), 'other'.tr()];
 
   @override
   void initState() {
@@ -136,6 +140,27 @@ class _EventDetailPageState extends State<EventDetailPage> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Harcama Tipi Dropdown
+                DropdownButtonFormField<String>(
+                  value: _selectedExpenseType.isNotEmpty ? _selectedExpenseType : null,
+                  decoration: InputDecoration(
+                    labelText: 'expense_type'.tr(),
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: _expenseTypes.map((type) {
+                    return DropdownMenuItem<String>(
+                      value: type,
+                      child: Text(type),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedExpenseType = value!;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                // Fiyat girişi için TextField
                 TextField(
                   controller: _priceController,
                   keyboardType: TextInputType.number,

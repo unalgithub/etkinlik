@@ -25,5 +25,12 @@
   "Ayarlar": "Ayarlar",
    "logout":"Çıkış Yap",
    "current_price":"Mevcut Fiyat",
-   "prices_saved": "Fiyat Kaydedildi"
+   "prices_saved": "Fiyat Kaydedildi",
+    "expense_type":"Harcama Tipi",
+    "food":"Gıda",
+    "transport":"Ulaşım",
+    "accomodation":"Konaklama",
+    "other":"Diğer"
+  
+    
 }

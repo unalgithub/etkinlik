@@ -25,6 +25,13 @@
   "Ayarlar": "Settings",
   "logout":"Logout",
   "current_price":"Current Price",
-  "prices_saved": "Prices Saved"
+  "prices_saved": "Prices Saved",
+  "expense_type":"Expense Type",
+  "food":"Food",
+  "transport":"Transport",
+  "accomodation":"Accomodation",
+  "other":"Other"
+
+  
   
 }
