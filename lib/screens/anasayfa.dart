@@ -16,6 +16,7 @@ class EventPage extends StatefulWidget {
   const EventPage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _EventPageState createState() => _EventPageState();
 }
 
@@ -214,6 +215,7 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
 
   Future<void> _signOutAndRedirect(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
+    // ignore: use_build_context_synchronously
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => const LoginScreen(), // Giriş ekranına yönlendirme
@@ -311,7 +313,7 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
     User? currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser == null) {
-      return Center(child: Text("Kullanıcı oturum açmamış."));
+      return const Center(child: Text("Kullanıcı oturum açmamış."));
     }
 
     // Firebase'deki kullanıcının email'ine göre belgeyi bul

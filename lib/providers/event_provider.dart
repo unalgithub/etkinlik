@@ -33,7 +33,7 @@ class EventProvider extends ChangeNotifier {
             if (person is Map<String, dynamic>) {
               return {
                 'name': person['name'] ?? 'Unknown',
-                'price': person['price'] ?? null,
+                'price': person['price'],
               };
             } else if (person is String) {
               return {
