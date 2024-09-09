@@ -16,7 +16,6 @@ class EventPage extends StatefulWidget {
   const EventPage({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _EventPageState createState() => _EventPageState();
 }
 
@@ -41,25 +40,29 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-   
-
+    // FloatingActionButton animasyonunu başlatıyoruz
     _fabAnimationController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
+
+    // Border animasyonunu başlatıyoruz
     _borderRadiusAnimationController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
+
     fabCurve = CurvedAnimation(
       parent: _fabAnimationController,
       curve: const Interval(0.5, 1.0, curve: Curves.fastOutSlowIn),
     );
+
     borderRadiusCurve = CurvedAnimation(
       parent: _borderRadiusAnimationController,
       curve: const Interval(0.5, 1.0, curve: Curves.fastOutSlowIn),
     );
 
+    // fabAnimation ve borderRadiusAnimation tanımlıyoruz
     fabAnimation = Tween<double>(begin: 0, end: 1).animate(fabCurve);
     borderRadiusAnimation = Tween<double>(begin: 0, end: 1).animate(
       borderRadiusCurve,
@@ -73,6 +76,13 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
       const Duration(seconds: 1),
       () => _borderRadiusAnimationController.forward(),
     );
+  }
+
+  @override
+  void dispose() {
+    _fabAnimationController.dispose();
+    _borderRadiusAnimationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -109,12 +119,12 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
                           },
                         ),
                         IconButton(
-                      icon: const Icon(Icons.exit_to_app),
-                      onPressed: () {
-                        _signOutAndRedirect(context); // Çıkış fonksiyonunu çağırıyoruz
-                      },
-                      tooltip: 'logout'.tr(),
-                    ),
+                          icon: const Icon(Icons.exit_to_app),
+                          onPressed: () {
+                            _signOutAndRedirect(context); // Çıkış fonksiyonunu çağırıyoruz
+                          },
+                          tooltip: 'logout'.tr(),
+                        ),
                       ],
                     ),
                   ),
@@ -185,7 +195,6 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
       },
     );
   }
-  
 
   void _changeLanguage(BuildContext context) {
     final currentLocale = context.locale;
@@ -196,13 +205,14 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
     final newLocale = currentLocale == const Locale('tr', 'TR')
         ? const Locale('en', 'US')
         : const Locale('tr', 'TR');
-    
+
     context.setLocale(newLocale);
     if (kDebugMode) {
       print("New Locale: $newLocale");
     }
   }
-    Future<void> _signOutAndRedirect(BuildContext context) async {
+
+  Future<void> _signOutAndRedirect(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
@@ -211,129 +221,146 @@ class _EventPageState extends State<EventPage> with TickerProviderStateMixin {
     );
   }
 
-Widget _getBody(EventProvider eventProvider) {
-  switch (_bottomNavIndex) {
-    case 0:
-      return _buildEventList(eventProvider);
-    case 1:
-      return Center(child: Text("Sayfa 1".tr()));
-    case 3:
-      return _buildSettingsPage();
-    default:
-      return Center(child: Text("page".tr(args: [_bottomNavIndex.toString()])));
-  }
-}
-Widget _buildSettingsPage() {
-  User? currentUser = FirebaseAuth.instance.currentUser;
-
-  if (currentUser == null) {
-    return Center(child: Text("Kullanıcı oturum açmamış."));
+  Widget _getBody(EventProvider eventProvider) {
+    switch (_bottomNavIndex) {
+      case 0:
+        return _buildEventList(eventProvider);
+      case 1:
+        return Center(child: Text("Sayfa 1".tr()));
+      case 3:
+        return _buildSettingsPage();
+      default:
+        return Center(child: Text("page".tr(args: [_bottomNavIndex.toString()])));
+    }
   }
 
-  // Firebase'deki kullanıcının email'ine göre belgeyi bul
-  return FutureBuilder<QuerySnapshot>(
-    future: FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: currentUser.email)
-        .get(), // Email alanına göre sorgulama
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-
-      if (snapshot.hasError) {
-        return const Center(child: Text("Veri alınırken hata oluştu."));
-      }
-
-      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-        return const Center(child: Text("Kullanıcı bilgileri bulunamadı."));
-      }
-
-      // Veriyi alalım
-      var userDoc = snapshot.data!.docs.first;
-      String userName = userDoc['name'] ?? "Kullanıcı Adı";
-      String userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
-
+  Widget _buildEventList(EventProvider eventProvider) {
+    if (eventProvider.events.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: Colors.purple,
-              child: Text(
-                userInitial,
-                style: const TextStyle(fontSize: 24, color: Colors.white),
-              ),
-            ),
-            const SizedBox(height: 20),
             Text(
-              userName,
-              style: const TextStyle(fontSize: 20),
+              "no_events_available".tr(),
+              style: const TextStyle(fontSize: 18),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "tap_the_button_below_to_add_an_event".tr(),
+              style: const TextStyle(fontSize: 16),
             ),
           ],
         ),
       );
-    },
-  );
-}
+    }
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: eventProvider.events.length,
+            itemBuilder: (context, index) {
+              final event = eventProvider.events[index];
 
+              // Katılımcıları List<String> olarak düzenleme
+              final people = (event['people'] as List<dynamic>)
+                  .map((person) =>
+                      person is Map<String, dynamic> ? person['name'].toString() : person.toString())
+                  .toList();
 
-
-Widget _buildEventList(EventProvider eventProvider) {
-  return Column(
-    children: [
-      Expanded(
-        child: ListView.builder(
-          itemCount: eventProvider.events.length,
-          itemBuilder: (context, index) {
-            final event = eventProvider.events[index];
-
-            // Casting participants to List<String>
-            final people = (event['people'] as List<dynamic>)
-                .map((person) => person is Map<String, dynamic> ? person['name'].toString() : person.toString())
-                .toList();
-
-            return InkWell(
-              onLongPress: () {
-                _showDeleteDialog(index, eventProvider);
-              },
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => EventDetailPage(
-                      eventName: event['name'],
-                      participants: people,
-                      uniqueId: '', // Ensure you pass the correct uniqueId here
+              return InkWell(
+                onLongPress: () {
+                  _showDeleteDialog(index, eventProvider);
+                },
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => EventDetailPage(
+                        eventName: event['name'],
+                        participants: people,
+                        uniqueId: '', // Doğru uniqueId eklenmeli
+                      ),
+                    ),
+                  );
+                },
+                child: Card(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    title: Text(event['name'] ?? ''),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${"location".tr()}: ${event['location']}'),
+                        Text('${"date".tr()}: ${event['date']}'),
+                        Text('${"time".tr()}: ${event['time']}'),
+                        const SizedBox(height: 10),
+                        Text('participants'.tr()),
+                        ...people.map((person) => Text(person)),
+                      ],
                     ),
                   ),
-                );
-              },
-              child: Card(
-                color: Colors.transparent,
-                child: ListTile(
-                  title: Text(event['name'] ?? ''),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${"location".tr()}: ${event['location']}'),
-                      Text('${"date".tr()}: ${event['date']}'),
-                      Text('${"time".tr()}: ${event['time']}'),
-                      const SizedBox(height: 10),
-                      Text('participants'.tr()),
-                      ...people.map((person) => Text(person)), // Show only the participant names
-                    ],
-                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettingsPage() {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      return Center(child: Text("Kullanıcı oturum açmamış."));
+    }
+
+    // Firebase'deki kullanıcının email'ine göre belgeyi bul
+    return FutureBuilder<QuerySnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: currentUser.email)
+          .get(), // Email alanına göre sorgulama
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return const Center(child: Text("Veri alınırken hata oluştu."));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text("Kullanıcı bilgileri bulunamadı."));
+        }
+
+        // Veriyi alalım
+        var userDoc = snapshot.data!.docs.first;
+        String userName = userDoc['name'] ?? "Kullanıcı Adı";
+        String userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
+
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.purple,
+                child: Text(
+                  userInitial,
+                  style: const TextStyle(fontSize: 24, color: Colors.white),
                 ),
               ),
-            );
-          },
-        ),
-      ),
-    ],
-  );
-}
-
+              const SizedBox(height: 20),
+              Text(
+                userName,
+                style: const TextStyle(fontSize: 20),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   void _showDeleteDialog(int index, EventProvider eventProvider) {
     showDialog(

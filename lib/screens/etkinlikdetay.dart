@@ -71,7 +71,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
     final price = double.tryParse(_priceController.text);
     if (price != null) {
       setState(() {
-        _currentPrice = price; // Şu anki fiyatı güncelle
+        _currentPrice = price; // Şu anki fiyatı güncelle 
         _totalPrice += _currentPrice; // Toplam fiyatı güncelle
       });
       _priceController.clear();
@@ -190,6 +190,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
+                // Expanded ListView to make participants scrollable
                 Expanded(
                   child: ListView.builder(
                     itemCount: widget.participants.length,
@@ -210,12 +211,12 @@ class _EventDetailPageState extends State<EventDetailPage> {
                     },
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: _confirmAndSavePrices, // Onayla ve fiyatları kaydet
                   child: Text('confirm'.tr()),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: _saveData, // Kaydet
                   child: Text('save'.tr()),
