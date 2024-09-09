@@ -31,7 +31,7 @@
   "transport":"Transport",
   "accomodation":"Accomodation",
   "other":"Other",
-  "no_events_available":"No events available",
+  "no_events_available":"No events available!",
   "tap_the_button_below_to_add_an_event":"Tap the button below to add an event"
 
   
