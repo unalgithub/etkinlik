@@ -230,27 +230,29 @@ Widget _buildSettingsPage() {
     return Center(child: Text("Kullanıcı oturum açmamış."));
   }
 
-  // Kullanıcının Firestore'daki belgelerini almak
-  return FutureBuilder<DocumentSnapshot>(
-    future: FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get(),
+  // Firebase'deki kullanıcının email'ine göre belgeyi bul
+  return FutureBuilder<QuerySnapshot>(
+    future: FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: currentUser.email)
+        .get(), // Email alanına göre sorgulama
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
-        return Center(child: CircularProgressIndicator());
+        return const Center(child: CircularProgressIndicator());
       }
 
       if (snapshot.hasError) {
-        print("Hata: ${snapshot.error}"); // Hata mesajını konsola yazdır
-        return Center(child: Text("Veri alınırken hata oluştu."));
+        return const Center(child: Text("Veri alınırken hata oluştu."));
       }
 
-      if (!snapshot.hasData || !snapshot.data!.exists) {
-        print("Kullanıcı ID: ${currentUser.uid}"); // Kullanıcı ID'sini konsola yazdır
-        return Center(child: Text("Kullanıcı bilgileri bulunamadı."));
+      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        return const Center(child: Text("Kullanıcı bilgileri bulunamadı."));
       }
 
-      // Veritabanından kullanıcı adını al
-      String userName = snapshot.data!['name'] ?? "Kullanıcı Adı"; // Varsayılan metin
-      String userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : '?'; // Boşsa '?' göster
+      // Veriyi alalım
+      var userDoc = snapshot.data!.docs.first;
+      String userName = userDoc['name'] ?? "Kullanıcı Adı";
+      String userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
 
       return Center(
         child: Column(
@@ -261,21 +263,22 @@ Widget _buildSettingsPage() {
               backgroundColor: Colors.purple,
               child: Text(
                 userInitial,
-                style: TextStyle(fontSize: 24, color: Colors.white),
+                style: const TextStyle(fontSize: 24, color: Colors.white),
               ),
             ),
             const SizedBox(height: 20),
             Text(
               userName,
-              style: TextStyle(fontSize: 20),
+              style: const TextStyle(fontSize: 20),
             ),
-            // Diğer ayarlar, butonlar vb. burada
           ],
         ),
       );
     },
   );
 }
+
+
 
 Widget _buildEventList(EventProvider eventProvider) {
   return Column(
