@@ -23,10 +23,6 @@ class EventDetailPage extends StatefulWidget {
 
 class _EventDetailPageState extends State<EventDetailPage> with AutomaticKeepAliveClientMixin<EventDetailPage> {
   final TextEditingController _priceController = TextEditingController();
-  final Map<String, bool> _selectedParticipants = {};
-  final Map<String, double> _participantPrices = {};
-  double _currentPrice = 0.0;
-  double _totalPrice = 0.0;
   String _selectedExpenseType = '';
 
   final List<String> _expenseTypes = ['food'.tr(), 'transport'.tr(), 'accomodation'.tr(), 'other'.tr()];
@@ -34,72 +30,44 @@ class _EventDetailPageState extends State<EventDetailPage> with AutomaticKeepAli
   @override
   void initState() {
     super.initState();
+    final eventProvider = Provider.of<EventDetailProvider>(context, listen: false);
+    eventProvider.initializeParticipants(widget.participants);
     _loadData();
-    widget.participants.forEach((participant) {
-      _selectedParticipants[participant] = false;
-      _participantPrices[participant] = 0.0;
-    });
   }
 
   Future<void> _loadData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     double? savedTotalPrice = prefs.getDouble('${widget.eventName}_${widget.uniqueId}_totalPrice');
     if (savedTotalPrice != null) {
-      _totalPrice = savedTotalPrice;
-    }
+      String? savedParticipantPrices = prefs.getString('${widget.eventName}_${widget.uniqueId}_participantPrices');
+      if (savedParticipantPrices != null) {
+        Map<String, dynamic> loadedPrices = jsonDecode(savedParticipantPrices);
+        Map<String, double> participantPrices = {};
+        loadedPrices.forEach((key, value) {
+          participantPrices[key] = value;
+        });
 
-    String? savedParticipantPrices = prefs.getString('${widget.eventName}_${widget.uniqueId}_participantPrices');
-    if (savedParticipantPrices != null) {
-      Map<String, dynamic> loadedPrices = jsonDecode(savedParticipantPrices);
-      loadedPrices.forEach((key, value) {
-        _participantPrices[key] = value;
-      });
+        Provider.of<EventDetailProvider>(context, listen: false).loadPrices(savedTotalPrice, participantPrices);
+      }
     }
   }
 
-  void _addPrice() {
+  void _addPrice(EventDetailProvider eventProvider) {
     final price = double.tryParse(_priceController.text);
     if (price != null) {
-      setState(() {
-        _currentPrice = price;
-        _totalPrice += _currentPrice;
-      });
+      eventProvider.addPrice(price);
       _priceController.clear();
     }
   }
 
-  double _calculateCurrentPricePerPerson() {
-    int selectedCount = _selectedParticipants.values.where((isSelected) => isSelected).length;
-    if (selectedCount == 0) return 0.0;
-    return _currentPrice / selectedCount;
+  void _confirmAndSavePrices(EventDetailProvider eventProvider) {
+    eventProvider.confirmAndSavePrices();
   }
 
-  void _confirmAndSavePrices() async {
+  void _saveData(EventDetailProvider eventProvider) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    _selectedParticipants.forEach((participant, isSelected) {
-      if (isSelected) {
-        double pricePerPerson = _calculateCurrentPricePerPerson();
-        _participantPrices[participant] = (_participantPrices[participant] ?? 0.0) + pricePerPerson;
-      }
-    });
-
-    setState(() {
-      _selectedParticipants.updateAll((key, value) => false);
-      _currentPrice = 0.0;
-    });
-
-    await prefs.setString('${widget.eventName}_${widget.uniqueId}_participantPrices', jsonEncode(_participantPrices));
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('prices_saved'.tr())),
-    );
-  }
-
-  void _saveData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('${widget.eventName}_${widget.uniqueId}_totalPrice', _totalPrice);
-    await prefs.setString('${widget.eventName}_${widget.uniqueId}_participantPrices', jsonEncode(_participantPrices));
+    await prefs.setDouble('${widget.eventName}_${widget.uniqueId}_totalPrice', eventProvider.totalPrice);
+    await prefs.setString('${widget.eventName}_${widget.uniqueId}_participantPrices', jsonEncode(eventProvider.participantPrices));
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('saved'.tr())),
@@ -111,8 +79,6 @@ class _EventDetailPageState extends State<EventDetailPage> with AutomaticKeepAli
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    // ignore: unused_local_variable
-    var screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       appBar: AppBar(
@@ -120,7 +86,7 @@ class _EventDetailPageState extends State<EventDetailPage> with AutomaticKeepAli
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView( // İçerikleri kaydırılabilir hale getiriyoruz
+        child: SingleChildScrollView(
           child: Consumer<EventDetailProvider>(
             builder: (context, eventProvider, child) {
               return Column(
@@ -155,53 +121,51 @@ class _EventDetailPageState extends State<EventDetailPage> with AutomaticKeepAli
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton(
-                    onPressed: _addPrice,
+                    onPressed: () => _addPrice(eventProvider),
                     child: Text('add'.tr()),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    '${'total_price'.tr()}: $_totalPrice TL',
+                    '${'total_price'.tr()}: ${eventProvider.totalPrice} TL',
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${'current_price'.tr()}: $_currentPrice TL',
+                    '${'current_price'.tr()}: ${eventProvider.currentPrice} TL',
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    '${'price_per_person'.tr()}: ${_calculateCurrentPricePerPerson().toStringAsFixed(2)} TL',
+                    '${'price_per_person'.tr()}: ${eventProvider.calculateCurrentPricePerPerson().toStringAsFixed(2)} TL',
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   ListView.builder(
-                    shrinkWrap: true, // ListView'ı sıkıştırarak kullanıyoruz
-                    physics: NeverScrollableScrollPhysics(), // İç içe kaydırmayı engelliyoruz
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
                     itemCount: widget.participants.length,
                     itemBuilder: (context, index) {
                       final participant = widget.participants[index];
                       return CheckboxListTile(
-                        value: _selectedParticipants[participant],
+                        value: eventProvider.selectedParticipants[participant],
                         onChanged: (bool? value) {
-                          setState(() {
-                            _selectedParticipants[participant] = value!;
-                          });
+                          eventProvider.updateSelectedParticipant(participant, value!);
                         },
                         title: Text(participant),
                         secondary: Text(
-                          '${_participantPrices[participant] != 0 ? _participantPrices[participant]!.toStringAsFixed(2) : '0.00'} TL',
+                          '${eventProvider.participantPrices[participant] != 0 ? eventProvider.participantPrices[participant]!.toStringAsFixed(2) : '0.00'} TL',
                         ),
                       );
                     },
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton(
-                    onPressed: _confirmAndSavePrices,
+                    onPressed: () => _confirmAndSavePrices(eventProvider), // Onayla ve fiyatları kaydet
                     child: Text('confirm'.tr()),
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton(
-                    onPressed: _saveData,
+                    onPressed: () => _saveData(eventProvider), // Kaydet
                     child: Text('save'.tr()),
                   ),
                 ],
@@ -214,5 +178,5 @@ class _EventDetailPageState extends State<EventDetailPage> with AutomaticKeepAli
   }
 
   @override
-  bool get wantKeepAlive => true; // Durumun korunmasını sağlar
+  bool get wantKeepAlive => true;
 }

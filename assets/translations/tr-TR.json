@@ -32,7 +32,8 @@
     "accomodation":"Konaklama",
     "other":"Diğer",
     "no_events_available":"Mevcut etkinlik yok!",
-    "tap_the_button_below_to_add_an_event":"Etkinlik eklemek için aşağıdaki düğmeye dokunun"
+    "tap_the_button_below_to_add_an_event":"Etkinlik eklemek için aşağıdaki düğmeye dokunun",
+    "choose_a_person":"Kişi veya kişileri seçin"
   
     
 }
