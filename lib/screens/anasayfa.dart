@@ -285,7 +285,12 @@ Widget _buildEventList(EventProvider eventProvider) {
           itemCount: eventProvider.events.length,
           itemBuilder: (context, index) {
             final event = eventProvider.events[index];
-            final people = (event['people'] as List<dynamic>).map((e) => e.toString()).toList();
+
+            // Casting participants to List<String>
+            final people = (event['people'] as List<dynamic>)
+                .map((person) => person is Map<String, dynamic> ? person['name'].toString() : person.toString())
+                .toList();
+
             return InkWell(
               onLongPress: () {
                 _showDeleteDialog(index, eventProvider);
@@ -296,7 +301,7 @@ Widget _buildEventList(EventProvider eventProvider) {
                     builder: (context) => EventDetailPage(
                       eventName: event['name'],
                       participants: people,
-                      uniqueId: '',
+                      uniqueId: '', // Ensure you pass the correct uniqueId here
                     ),
                   ),
                 );
@@ -313,7 +318,7 @@ Widget _buildEventList(EventProvider eventProvider) {
                       Text('${"time".tr()}: ${event['time']}'),
                       const SizedBox(height: 10),
                       Text('participants'.tr()),
-                      ...people.map((person) => Text(person)),
+                      ...people.map((person) => Text(person)), // Show only the participant names
                     ],
                   ),
                 ),
@@ -325,6 +330,7 @@ Widget _buildEventList(EventProvider eventProvider) {
     ],
   );
 }
+
 
   void _showDeleteDialog(int index, EventProvider eventProvider) {
     showDialog(

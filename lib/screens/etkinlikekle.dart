@@ -20,7 +20,7 @@ class AddEventPage extends StatefulWidget {
 }
 
 class _AddEventPageState extends State<AddEventPage> {
-  bool _isSubmitting = false; // Yeni bir boolean flag
+  bool _isSubmitting = false;
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -55,140 +55,145 @@ class _AddEventPageState extends State<AddEventPage> {
   }
 
   void _submitEvent(BuildContext context) async {
-    if (_isSubmitting) return; // Zaten bir gönderim işlemi devam ediyorsa tekrar tetiklenmesin
-    setState(() {
-      _isSubmitting = true; // İşlem başladı
-    });
+  if (_isSubmitting) return;
+  setState(() {
+    _isSubmitting = true;
+  });
 
-    final formProvider = Provider.of<EventFormProvider>(context, listen: false);
+  final formProvider = Provider.of<EventFormProvider>(context, listen: false);
 
-    final String name = formProvider.nameController.text;
-    final String location = formProvider.locationController.text;
-    final String date = formProvider.dateController.text;
-    final String time = formProvider.timeController.text;
-    final List<String> people = List<String>.from(formProvider.people);
+  final String name = formProvider.nameController.text;
+  final String location = formProvider.locationController.text;
+  final String date = formProvider.dateController.text;
+  final String time = formProvider.timeController.text;
+  final List<String> people = List<String>.from(formProvider.people);
 
-    final FirebaseAuth _auth = FirebaseAuth.instance;
-    final User? user = _auth.currentUser;
-    final String uid = user!.uid;
+  if (name.isNotEmpty &&
+      location.isNotEmpty &&
+      date.isNotEmpty &&
+      time.isNotEmpty) {
+    // Her kişiye başlangıçta price null atanıyor
+    final List<Map<String, dynamic>> peopleWithPrices = people.map((person) {
+      return {
+        'name': person,
+        'price': '' // Price başlangıçta boş/null
+      };
+    }).toList();
 
-    if (name.isNotEmpty &&
-        location.isNotEmpty &&
-        date.isNotEmpty &&
-        time.isNotEmpty) {
-      // Firestore'a veri ekleme
-      FirebaseFirestore.instance.collection('events').add({
-        'uid': uid,  // Kullanıcının ID'si ekleniyor
+    // Firestore'a veri ekleme
+    FirebaseFirestore.instance.collection('events').add({
+      'uid': uid, // Kullanıcının ID'si ekleniyor
+      'name': name,
+      'location': location,
+      'date': date,
+      'time': time,
+      'people': peopleWithPrices, // Kişiler ve başlangıçta boş fiyatlar ekleniyor
+    }).then((value) {
+      widget.onEventAdded({
         'name': name,
         'location': location,
         'date': date,
         'time': time,
-        'people': people,
-      }).then((value) {
-        widget.onEventAdded({
-          'name': name,
-          'location': location,
-          'date': date,
-          'time': time,
-          'people': people,
-        });
-        formProvider.clearFields();
-        Navigator.of(context).pop();
-      }).catchError((error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Etkinlik eklenemedi: $error')),
-        );
-      }).whenComplete(() {
-        setState(() {
-          _isSubmitting = false; // İşlem bittiğinde tekrar form gönderimini aç
-        });
+        'people': peopleWithPrices,
       });
-    }
+      formProvider.clearFields();
+      Navigator.of(context).pop();
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Etkinlik eklenemedi: $error')),
+      );
+    }).whenComplete(() {
+      setState(() {
+        _isSubmitting = false;
+      });
+    });
   }
-
- @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () {
-          Navigator.of(context).pop();
-        },
-        tooltip: 'back'.tr(),
-      ),
-      title: Text('add_event'.tr()),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.check),
-          onPressed: () => _submitEvent(context),
-          tooltip: 'confirm'.tr(),
-        ),
-      ],
-    ),
-    body: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Consumer<EventFormProvider>(
-        builder: (context, formProvider, child) {
-          return Column(
-            children: [
-              TextField(
-                controller: formProvider.nameController,
-                decoration: InputDecoration(labelText: 'event_name'.tr()),
-              ),
-              TextField(
-                controller: formProvider.locationController,
-                decoration: InputDecoration(labelText: 'location'.tr()),
-              ),
-              TextField(
-                controller: formProvider.dateController,
-                decoration: InputDecoration(
-                  labelText: 'date'.tr(),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.calendar_today),
-                    onPressed: () => _selectDate(context),
-                  ),
-                ),
-                readOnly: true,
-              ),
-              TextField(
-                controller: formProvider.timeController,
-                decoration: InputDecoration(
-                  labelText: 'time'.tr(),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.access_time),
-                    onPressed: () => _selectTime(context),
-                  ),
-                ),
-                readOnly: true,
-              ),
-              TextField(
-                controller: formProvider.personController,
-                decoration: InputDecoration(
-                  labelText: 'add_people'.tr(),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
-                    onPressed: formProvider.addPerson,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: formProvider.people.length,
-                  itemBuilder: (context, index) {
-                    final person = formProvider.people[index];
-                    return ListTile(
-                      title: Text(person),
-                    );
-                  },
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    ),
-  );
 }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          tooltip: 'back'.tr(),
+        ),
+        title: Text('add_event'.tr()),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check),
+            onPressed: () => _submitEvent(context),
+            tooltip: 'confirm'.tr(),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Consumer<EventFormProvider>(
+          builder: (context, formProvider, child) {
+            return Column(
+              children: [
+                TextField(
+                  controller: formProvider.nameController,
+                  decoration: InputDecoration(labelText: 'event_name'.tr()),
+                ),
+                TextField(
+                  controller: formProvider.locationController,
+                  decoration: InputDecoration(labelText: 'location'.tr()),
+                ),
+                TextField(
+                  controller: formProvider.dateController,
+                  decoration: InputDecoration(
+                    labelText: 'date'.tr(),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: () => _selectDate(context),
+                    ),
+                  ),
+                  readOnly: true,
+                ),
+                TextField(
+                  controller: formProvider.timeController,
+                  decoration: InputDecoration(
+                    labelText: 'time'.tr(),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.access_time),
+                      onPressed: () => _selectTime(context),
+                    ),
+                  ),
+                  readOnly: true,
+                ),
+                TextField(
+                  controller: formProvider.personController,
+                  decoration: InputDecoration(
+                    labelText: 'add_people'.tr(),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: formProvider.addPerson,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: formProvider.people.length,
+                    itemBuilder: (context, index) {
+                      final person = formProvider.people[index];
+                      return ListTile(
+                        title: Text(person),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 }

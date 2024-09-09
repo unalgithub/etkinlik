@@ -23,6 +23,8 @@
   "saved": "Saved",
   "Sayfa 1": "Page 1",
   "Ayarlar": "Settings",
-  "logout":"Logout"
+  "logout":"Logout",
+  "current_price":"Current Price",
+  "prices_saved": "Prices Saved"
   
 }

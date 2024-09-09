@@ -23,15 +23,38 @@ class EventProvider extends ChangeNotifier {
           .get();
 
       _events = querySnapshot.docs.map((doc) {
+        // Safely handle the 'people' field
+        final people = doc['people'];
+        List<Map<String, dynamic>> peopleList = [];
+
+        if (people is List) {
+          peopleList = people.map((person) {
+            // If person is a map, handle it, otherwise treat it as a string
+            if (person is Map<String, dynamic>) {
+              return {
+                'name': person['name'] ?? 'Unknown',
+                'price': person['price'] ?? null,
+              };
+            } else if (person is String) {
+              return {
+                'name': person,
+                'price': null,
+              };
+            }
+            return {'name': 'Unknown', 'price': null}; // Fallback in case of unexpected data
+          }).toList();
+        }
+
         return {
-          'id': doc.id, // documentId ekleyin
+          'id': doc.id,
           'name': doc['name'],
           'location': doc['location'],
           'date': doc['date'],
           'time': doc['time'],
-          'people': List<String>.from(doc['people']),
+          'people': peopleList, // Store the parsed people list
         };
       }).toList();
+
       notifyListeners();
     }
   }
@@ -42,7 +65,7 @@ class EventProvider extends ChangeNotifier {
     if (user != null) {
       event['uid'] = user.uid;
       DocumentReference docRef = await _firestore.collection('events').add(event);
-      event['id'] = docRef.id; // documentId'yi etkinliğe ekleyin
+      event['id'] = docRef.id;
       _events.add(event);
       notifyListeners();
     }

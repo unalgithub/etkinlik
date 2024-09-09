@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:deneme/providers/event_detail_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -19,95 +18,109 @@ class EventDetailPage extends StatefulWidget {
   });
 
   @override
-  // ignore: library_private_types_in_public_api
   _EventDetailPageState createState() => _EventDetailPageState();
 }
 
 class _EventDetailPageState extends State<EventDetailPage> {
   final TextEditingController _priceController = TextEditingController();
   final Map<String, bool> _selectedParticipants = {};
+  final Map<String, double> _participantPrices = {}; // Fiyatları tutmak için map
+  double _currentPrice = 0.0; // Girilen şu anki fiyat
+  double _totalPrice = 0.0; // Toplam fiyat
 
   @override
   void initState() {
     super.initState();
-    _loadData(); // Load data when the app starts
+    _loadData(); // Uygulama başlarken verileri yükleyelim
     widget.participants.forEach((participant) {
       _selectedParticipants[participant] = false;
+      _participantPrices[participant] = 0.0; // Başlangıçta tüm kişilerin fiyatı 0
     });
   }
 
-void _loadData() async {
-  try {
-    DocumentSnapshot eventSnapshot = await FirebaseFirestore.instance
-        .collection('events')
-        .doc(widget.uniqueId)
-        .get();
-
-    if (eventSnapshot.exists) {
-      Map<String, dynamic> data = eventSnapshot.data() as Map<String, dynamic>;
-      double? totalPrice = data['totalPrice'];
-      Map<String, dynamic> selectedParticipants = data['selectedParticipants'];
-
-      if (totalPrice != null) {
-        Provider.of<EventDetailProvider>(context, listen: false).setPrices([], totalPrice);
-        setState(() {
-          _selectedParticipants.addAll(selectedParticipants.map((key, value) => MapEntry(key, value as bool)));
-        });
-      }
+  // SharedPreferences'den verileri yükleyelim
+  void _loadData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    
+    // Toplam fiyatı yükle
+    double? savedTotalPrice = prefs.getDouble('${widget.eventName}_${widget.uniqueId}_totalPrice');
+    if (savedTotalPrice != null) {
+      setState(() {
+        _totalPrice = savedTotalPrice; // Kaydedilen toplam fiyatı yükle
+      });
     }
-  } catch (e) {
-    print("Error loading data from Firestore: $e");
+    
+    // Katılımcı fiyatlarını yükle
+    String? savedParticipantPrices = prefs.getString('${widget.eventName}_${widget.uniqueId}_participantPrices');
+    if (savedParticipantPrices != null) {
+      Map<String, dynamic> loadedPrices = jsonDecode(savedParticipantPrices);
+      loadedPrices.forEach((key, value) {
+        setState(() {
+          _participantPrices[key] = value;
+        });
+      });
+    }
   }
-}
 
+  // Fiyat eklerken toplam fiyatı da güncelleyelim
   void _addPrice() {
     final price = double.tryParse(_priceController.text);
     if (price != null) {
-      Provider.of<EventDetailProvider>(context, listen: false).addPrice(price);
+      setState(() {
+        _currentPrice = price; // Şu anki fiyatı güncelle
+        _totalPrice += _currentPrice; // Toplam fiyatı güncelle
+      });
       _priceController.clear();
     }
   }
-  Future<void> _saveDataToFirestore() async {
-  try {
-    final eventProvider = Provider.of<EventDetailProvider>(context, listen: false);
-    CollectionReference events = FirebaseFirestore.instance.collection('events');
 
-    await events.doc(widget.uniqueId).set({
-      'totalPrice': eventProvider.totalPrice,
-      'selectedParticipants': _selectedParticipants.map((key, value) => MapEntry(key, value)),
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('saved'.tr())),
-    );
-
-    Navigator.pop(context); // Go back to the main page
-  } catch (e) {
-    print("Error saving data to Firestore: $e");
-  }
-}
-
-  void _saveData() async {
-    await _saveDataToFirestore();
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    // ignore: use_build_context_synchronously
-    final eventProvider = Provider.of<EventDetailProvider>(context, listen: false);
-    await prefs.setString('${widget.eventName}_${widget.uniqueId}_prices', jsonEncode(eventProvider.prices));
-    await prefs.setDouble('${widget.eventName}_${widget.uniqueId}_totalPrice', eventProvider.totalPrice);
-
-    // ignore: use_build_context_synchronously
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('saved'.tr())),
-    );
-
-    // ignore: use_build_context_synchronously
-    Navigator.pop(context); // Go back to the main page
-  }
-
-  double _calculateSelectedTotalPrice() {
+  double _calculateCurrentPricePerPerson() {
     int selectedCount = _selectedParticipants.values.where((isSelected) => isSelected).length;
     if (selectedCount == 0) return 0.0;
-    return Provider.of<EventDetailProvider>(context, listen: false).totalPrice / selectedCount;
+    return _currentPrice / selectedCount; // Sadece şu anki fiyatı böl
+  }
+
+  // Fiyatları kaydetme işlemi, _totalPrice'ı da kaydedelim
+  void _confirmAndSavePrices() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    Map<String, double> participantPrices = {};
+
+    _selectedParticipants.forEach((participant, isSelected) {
+      if (isSelected) {
+        double pricePerPerson = _calculateCurrentPricePerPerson();
+        participantPrices[participant] = pricePerPerson;
+        _participantPrices[participant] = (_participantPrices[participant] ?? 0.0) + pricePerPerson;
+      }
+    });
+
+    // Checkboxları kaldır
+    setState(() {
+      _selectedParticipants.updateAll((key, value) => false);
+      _currentPrice = 0.0; // Şu anki fiyatı sıfırla
+    });
+
+    await prefs.setString('${widget.eventName}_${widget.uniqueId}_participantPrices', jsonEncode(_participantPrices));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('prices_saved'.tr())),
+    );
+  }
+
+  // Fiyatları ve toplam fiyatı SharedPreferences'a kaydet
+  void _saveData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    
+    // Toplam fiyatı kaydet
+    await prefs.setDouble('${widget.eventName}_${widget.uniqueId}_totalPrice', _totalPrice);
+    
+    // Katılımcı fiyatlarını kaydet
+    await prefs.setString('${widget.eventName}_${widget.uniqueId}_participantPrices', jsonEncode(_participantPrices));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('saved'.tr())),
+    );
+
+    Navigator.pop(context); // Ana sayfaya dön
   }
 
   @override
@@ -127,7 +140,7 @@ void _loadData() async {
                   controller: _priceController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'price'.tr(),
+                    labelText: 'current_price'.tr(), // Şu anki fiyat
                     border: const OutlineInputBorder(),
                   ),
                 ),
@@ -138,12 +151,17 @@ void _loadData() async {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  '${'total_price'.tr()}: ${eventProvider.totalPrice} TL',
+                  '${'total_price'.tr()}: $_totalPrice TL', // Toplam fiyat
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${'current_price'.tr()}: $_currentPrice TL', // Şu anki fiyat
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  '${'price_per_person'.tr()}: ${_calculateSelectedTotalPrice().toStringAsFixed(2)} TL',
+                  '${'price_per_person'.tr()}: ${_calculateCurrentPricePerPerson().toStringAsFixed(2)} TL', // Şu anki fiyat kişilere bölündü
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
@@ -161,7 +179,7 @@ void _loadData() async {
                         },
                         title: Text(participant),
                         secondary: Text(
-                          '${_selectedParticipants[participant]! ? (_calculateSelectedTotalPrice().toStringAsFixed(2)) : '0.00'} TL',
+                          '${_participantPrices[participant] != 0 ? _participantPrices[participant]!.toStringAsFixed(2) : '0.00'} TL', // Katılımcı fiyatı
                         ),
                       );
                     },
@@ -169,10 +187,15 @@ void _loadData() async {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: _saveData,
+                  onPressed: _confirmAndSavePrices, // Onayla ve fiyatları kaydet
+                  child: Text('confirm'.tr()),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _saveData, // Kaydet
                   child: Text('save'.tr()),
                 ),
-              ],  
+              ],
             );
           },
         ),

@@ -23,5 +23,7 @@
   "saved": "Kaydedildi",
   "Sayfa 1": "Sayfa 1",
   "Ayarlar": "Ayarlar",
-   "logout":"Çıkış Yap"
+   "logout":"Çıkış Yap",
+   "current_price":"Mevcut Fiyat",
+   "prices_saved": "Fiyat Kaydedildi"
 }
